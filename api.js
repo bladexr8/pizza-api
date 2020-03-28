@@ -10,6 +10,7 @@ const createOrder = require('./handlers/create-order')
 const updateOrder = require('./handlers/update-order')
 const deleteOrder = require('./handlers/delete-order')
 const getOrders = require('./handlers/get-orders')
+const updateDeliveryStatus = require('./handlers/update-delivery-status')
 
 // default handler GET /
 api.get('/', () => 'Welcome to the Pizza API')
@@ -76,4 +77,11 @@ api.get('/orders/{id}', (request) => {
     error: 404
 })
 
+// route POST /delivery (webhook for delivery API to update order status)
+api.post('/delivery', request => updateDeliveryStatus(request.body), {
+    success: 200,
+    error: 500
+})
+
+// Export a Claudia API Builder instnace
 module.exports = api
