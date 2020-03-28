@@ -9,6 +9,7 @@ const getPizzas = require('./handlers/get-pizzas')
 const createOrder = require('./handlers/create-order')
 const updateOrder = require('./handlers/update-order')
 const deleteOrder = require('./handlers/delete-order')
+const getOrders = require('./handlers/get-orders')
 
 // default handler GET /
 api.get('/', () => 'Welcome to the Pizza API')
@@ -52,6 +53,27 @@ api.delete('/orders/{id}', (request) => {
     // customise error and success return codes
     success: 200,
     error: 500
+})
+
+// route GET /orders
+api.get('/orders', (request) => {
+    if (request.queryString.status) {
+        return getOrders({
+            status: request.queryString.status
+        })
+    } else {
+        return getOrders({})
+    }
+    
+})
+
+// route GET /orders/{id}
+api.get('/orders/{id}', (request) => {
+    // request order for Id given in route
+    return getOrders(request.pathParams.id)
+}, {
+    // customize error status code
+    error: 404
 })
 
 module.exports = api
