@@ -1,15 +1,39 @@
 // handler for DELETE /orders route
 
-function deleteOrder(id) {
-    // validate order object passed in
-    if (!id) {
-        throw new Error('To delete an order please provide the order Id')
-    }
+'use strict'
 
-    // for now return empty object
-    return {
-        message: `Order ${id} was successfully deleted`
-    }
+const AWS = require('aws-sdk')
+const docClient = new AWS.DynamoDB.DocumentClient()
+
+
+function deleteOrder(id) {
+    return docClient.get({
+        TableName: 'pizza-orders',
+        Key: {
+            orderId: id
+        }
+    }).promise()
+        .then(result => result.Item)
+        .then(item => {
+            if (item.orderStatus !== 'pending') {
+                throw new Error('Order status is not pending')
+            }
+        })
+        .then(() => {
+            return docClient.delete({
+                TableName: 'pizza-orders',
+                Key: {
+                    orderId: id
+                }
+            }).promise()
+            .then(result => {
+                console.log(`Order ${id} successfully deleted`)
+            })
+        })
+        .catch((deleteError) => {
+            console.log(`Error Deleting Order ${id}: ${deleteError}`)
+            throw deleteError
+        })
 }
 
 // export handler
