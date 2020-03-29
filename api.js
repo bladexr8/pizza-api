@@ -12,6 +12,11 @@ const deleteOrder = require('./handlers/delete-order')
 const getOrders = require('./handlers/get-orders')
 const updateDeliveryStatus = require('./handlers/update-delivery-status')
 
+// register a Custom Authoriser
+api.registerAuthorizer('userAuthentication', {
+    providerARNs: [process.env.userPoolArn]
+})
+
 // default handler GET /
 api.get('/', () => 'Welcome to the Pizza API')
 
@@ -31,11 +36,12 @@ api.get('/pizzas/{id}', (request) => {
 
 // route POST /orders
 api.post('/orders', (request) => {
-    return createOrder(request.body)
+    return createOrder(request)
 }, {
     // customise error and success return codes
     success: 201,
-    error: 400
+    error: 400,
+    cognitoAuthorizer: 'userAuthentication'
 })
 
 // route PUT /orders
@@ -44,7 +50,8 @@ api.put('/orders/{id}', (request) => {
 }, {
     // customise error and success return codes
     success: 200,
-    error: 500
+    error: 500,
+    cognitoAuthorizer: 'userAuthentication'
 })
 
 // route DELETE /orders
@@ -53,7 +60,8 @@ api.delete('/orders/{id}', (request) => {
 }, {
     // customise error and success return codes
     success: 200,
-    error: 500
+    error: 500,
+    cognitoAuthorizer: 'userAuthentication'
 })
 
 // route GET /orders
@@ -66,6 +74,8 @@ api.get('/orders', (request) => {
         return getOrders({})
     }
     
+}, {
+    cognitoAuthorizer: 'userAuthentication'
 })
 
 // route GET /orders/{id}
@@ -80,7 +90,8 @@ api.get('/orders/{id}', (request) => {
 // route POST /delivery (webhook for delivery API to update order status)
 api.post('/delivery', request => updateDeliveryStatus(request.body), {
     success: 200,
-    error: 500
+    error: 500,
+    cognitoAuthorizer: 'userAuthentication'
 })
 
 // Export a Claudia API Builder instnace
