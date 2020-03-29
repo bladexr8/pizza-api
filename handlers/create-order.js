@@ -1,11 +1,24 @@
 // handler for POST /orders route
 
-const AWS = require('aws-sdk')
+const AWSXRay = require('aws-xray-sdk-core')
+const AWS = AWSXRay.captureAWS(require('aws-sdk'))
 const docClient = new AWS.DynamoDB.DocumentClient()
 const { uuid } = require('uuidv4')
 const rp = require('minimal-request-promise')
 
 function createOrder(request) {
+    console.log('[INFO] Save an Order', request)
+
+    // get User Data
+    const userData = request.context.authorizer.claims
+    console.log('User data', userData)
+
+    // use an address from request body
+    let userAddress = request.body && request.body.address
+    if (!userAddress) {
+        userAddress = JSON.parse(userData.address).formatted
+    }
+
     // validate order object passed in
     if (!request || !request.pizza || !request.address) {
         throw new Error('To order pizza please provide pizza type and address where pizza should be delivered')
@@ -19,7 +32,7 @@ function createOrder(request) {
         body: JSON.stringify({
             pickupTime: '15.34pm',
             pickupAddress: 'Aunt Maria Pizzeria',
-            deliveryAddress: request.address,
+            deliveryAddress: userAddress,
             webhookUrl: 'https://6ihplbvik4.execute-api.us-east-1.amazonaws.com/latest/delivery'
         })
     })
@@ -29,9 +42,10 @@ function createOrder(request) {
                 TableName: 'pizza-orders',
                 Item: {
                     // orderId: uuid(),
+                    cognitoUsername: userAddress['cognito:username'],
                     orderId: response.deliveryId,
-                    pizza: request.pizza,
-                    address: request.address,
+                    pizza: request.body.pizza,
+                    address: userAddress,
                     orderStatus: 'pending'
                 }
             }).promise()
